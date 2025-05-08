@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Caption Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      background-color: #f0f0f0;
+    }
+    #container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+    }
+    input[type="text"], button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      margin-bottom: 20px;
+      font-size: 16px;
+    }
+    #output {
+      margin-top: 20px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <h2>AI Social Caption Generator</h2>
+    <p>Paste a link below:</p>
+    <input type="text" id="urlInput" placeholder="https://example.com/post">
+    <p>
+      <input type="checkbox" id="emojiCheckbox"> More emojis
+    </p>
+    <button onclick="generateCaption()">Generate Caption</button>
+    <div id="output"></div>
+  </div>
+
+  <script>
+  async function generateCaption() {
+    const url = document.getElementById('urlInput').value;
+    const includeEmojis = document.getElementById('emojiCheckbox').checked;
+    const output = document.getElementById('output');
+
+    output.textContent = 'Loading...';
+
+    try {
+      const res = await fetch('http://localhost:3000/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, includeEmojis })
+      });
+
+      const data = await res.json();
+      output.textContent = data.caption || 'No caption generated.';
+    } catch (err) {
+      output.textContent = 'Error generating caption.';
+    }
+  }
+  </script>
+</body>
+</html>
