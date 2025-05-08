@@ -7,14 +7,16 @@
     body {
       font-family: Arial, sans-serif;
       padding: 40px;
-      background-color: #f0f0f0;
+      background-color: #121212;
+      color: #f0f0f0;
     }
     #container {
       max-width: 600px;
       margin: auto;
-      background: white;
+      background: #1e1e1e;
       padding: 20px;
       border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
     }
     input[type="text"], button {
       width: 100%;
@@ -22,10 +24,61 @@
       margin-top: 10px;
       margin-bottom: 20px;
       font-size: 16px;
+      border: none;
+      border-radius: 5px;
+    }
+    input[type="text"] {
+      background: #2a2a2a;
+      color: #f0f0f0;
+    }
+    button {
+      background-color: #6200ea;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+    button:hover {
+      background-color: #7c3aed;
+      transform: scale(1.03);
     }
     #output {
       margin-top: 20px;
       white-space: pre-wrap;
+      background: #2a2a2a;
+      padding: 15px;
+      border-radius: 5px;
+      color: #f0f0f0;
+    }
+    #output span.hashtag {
+      color: #00b0ff;
+    }
+    .copy-button {
+      margin-top: 10px;
+      background-color: #03dac6;
+      color: #000;
+    }
+    .copy-button:hover {
+      background-color: #00c4b4;
+      transform: scale(1.03);
+    }
+    .loader {
+      border: 4px solid #333;
+      border-top: 4px solid #6200ea;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .center {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 40px;
     }
   </style>
 </head>
@@ -35,33 +88,68 @@
     <p>Paste a link below:</p>
     <input type="text" id="urlInput" placeholder="https://example.com/post">
     <p>
-      <input type="checkbox" id="emojiCheckbox"> More emojis
+      <input type="checkbox" id="emojiCheckbox"> No emojis
     </p>
     <button onclick="generateCaption()">Generate Caption</button>
     <div id="output"></div>
+    <button id="copyButton" class="copy-button" onclick="copyCaption()" style="display: none;">Copy Caption</button>
   </div>
 
   <script>
-  async function generateCaption() {
-    const url = document.getElementById('urlInput').value;
-    const includeEmojis = document.getElementById('emojiCheckbox').checked;
-    const output = document.getElementById('output');
-
-    output.textContent = 'Loading...';
-
-    try {
-      const res = await fetch('http://localhost:3000/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, includeEmojis })
-      });
-
-      const data = await res.json();
-      output.textContent = data.caption || 'No caption generated.';
-    } catch (err) {
-      output.textContent = 'Error generating caption.';
+    function removeEmojis(text) {
+      return text.replace(/[\u{1F600}-\u{1F6FF}\u{1F300}-\u{1F5FF}\u{1F700}-\u{1F77F}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
     }
-  }
+
+    function replaceHashtags(text) {
+      return text.replace(/#[\w]+/g, (tag) => `<span class="hashtag">${tag}</span>`);
+    }
+
+    async function generateCaption() {
+      const url = document.getElementById('urlInput').value;
+      const noEmojis = document.getElementById('emojiCheckbox').checked;
+      const output = document.getElementById('output');
+      const copyBtn = document.getElementById('copyButton');
+
+      output.innerHTML = '<div class="center"><div class="loader"></div></div>';
+      copyBtn.style.display = 'none';
+
+      try {
+        const res = await fetch('http://localhost:3000/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+
+        const data = await res.json();
+        let caption = data.caption || 'No caption generated.';
+
+        if (noEmojis) {
+          caption = removeEmojis(caption);
+        }
+
+        const captionWithHashtags = replaceHashtags(caption);
+        output.innerHTML = captionWithHashtags;
+        copyBtn.style.display = 'block';
+      } catch (err) {
+        output.textContent = 'Error generating caption.';
+      }
+    }
+
+    function copyCaption() {
+      const temp = document.createElement('textarea');
+      temp.value = document.getElementById('output').textContent;
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand('copy');
+      document.body.removeChild(temp);
+
+      const btn = document.getElementById('copyButton');
+      const originalText = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => {
+        btn.textContent = originalText;
+      }, 1500);
+    }
   </script>
 </body>
 </html>
